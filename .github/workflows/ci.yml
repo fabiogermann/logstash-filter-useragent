@@ -1,0 +1,41 @@
+name: JRuby CI
+
+on: [push, pull_request]
+
+env:
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+
+jobs:
+  rake-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target: ['test']
+        java-version: ['8', '9', '11', '17']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+      - name: install jruby
+        run: sudo apt-get install -y jruby
+      - name: install bundler
+        run: sudo gem install bundler
+      - name: bundle install
+        run: bundle install
+      - name: rake ${{ matrix.target }}
+        run: rake ${{ matrix.target }}
