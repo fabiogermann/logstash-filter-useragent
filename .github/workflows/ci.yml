@@ -9,10 +9,31 @@ jobs:
         os: [ubuntu-20.04]
         ruby: [jruby-9.1.17.0]
     runs-on: ${{ matrix.os }}
+    env:
+      working-directory: ./logstash/logstash-plugins/logstash-filter-useragent
+      LOGSTASH_SOURCE: 1
+      LOGSTASH_PATH: ../../logstash
     steps:
-      - uses: actions/checkout@v2
-      - uses: ruby/setup-ruby@v1
+      - name: Check out logstash
+        uses: actions/checkout@v2
+        with:
+          repository: elastic/logstash
+          path: ./logstash
+      - name: Create folder
+        run: mkdir ./logstash/logstash-plugins
+      - name: Checkout current repo
+        uses: actions/checkout@v2
+        with:
+          path: ${{env.directory}}
+      - name: Show Working directory
+        run: ls
+        working-directory: ${{env.directory}}
+      - name: Setup ruby env
+        uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-      - run: bundle exec rake test
+          working-directory: ${{env.directory}}
+      - name: Run tests
+        run: bundle exec rake test
+        working-directory: ${{env.directory}}
